@@ -6,7 +6,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 https_proxy=http://127.0.0.1:15236 http_proxy=http://127.0.0.1:15236 next dev",
     "build": "next build",
     "start": "next start",
     "lint": "biome check .",
