@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -42,16 +43,25 @@ export function UserAuthForm({
   });
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [isGoogleLoading, setIsGoogleLoading] = React.useState<boolean>(false);
+  const [turnstileToken, setTurnstileToken] = React.useState<string | null>(
+    null,
+  );
   const searchParams = useSearchParams();
 
   async function onSubmit(data: FormData) {
     setIsLoading(true);
 
     try {
+      if (!turnstileToken) {
+        toast.error("人机验证失败，请重试");
+        return;
+      }
+
       await authClient.signIn.magicLink({
         email: data.email.toLowerCase(),
         callbackURL: searchParams?.get("from") ?? `/${lang}/my-creations`,
-      });
+        turnstileToken,
+      } as any);
 
       toast.success("Check your email", {
         description: "We sent you a login link. Be sure to check your spam too.",
@@ -90,10 +100,16 @@ export function UserAuthForm({
               </p>
             )}
           </div>
+          <Turnstile
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+            onSuccess={(token) => {
+              setTurnstileToken(token);
+            }}
+          />
           <button
             type="submit"
             className={cn(buttonVariants())}
-            disabled={isLoading}
+            disabled={isLoading || !turnstileToken || disabled}
           >
             {isLoading && (
               <Icons.Spinner className="mr-2 h-4 w-4 animate-spin" />
